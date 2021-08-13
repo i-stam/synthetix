@@ -110,6 +110,9 @@
 	"SynthetixEscrow": {
 		"deploy": true
 	},
+	"ReferralProxy": {
+		"deploy": true
+	},
 	"RewardEscrow": {
 		"deploy": true
 	},
