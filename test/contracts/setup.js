@@ -188,6 +188,7 @@ const setupContract = async ({
 		SynthetixBridgeToOptimism: [owner, tryGetAddressOf('AddressResolver')],
 		SynthetixBridgeToBase: [owner, tryGetAddressOf('AddressResolver')],
 		SynthetixBridgeEscrow: [owner],
+		ReferralProxy: [owner, tryGetAddressOf('AddressResolver')],
 		RewardsDistribution: [
 			owner,
 			tryGetAddressOf('Synthetix'),
@@ -633,6 +634,7 @@ const setupAllContracts = async ({
 		{ contract: 'DelegateApprovals', deps: ['EternalStorage'] },
 		{ contract: 'EternalStorage', forContract: 'Liquidations' },
 		{ contract: 'Liquidations', deps: ['EternalStorage', 'FlexibleStorage'] },
+		{ contract: 'ReferralProxy', deps: ['AddressResolver'] },
 		{
 			contract: 'RewardsDistribution',
 			mocks: ['Synthetix', 'FeePool', 'RewardEscrow', 'RewardEscrowV2', 'ProxyFeePool'],
