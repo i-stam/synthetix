@@ -11,13 +11,16 @@ import "./interfaces/ISynthetix.sol";
 import "openzeppelin-solidity-2.3.0/contracts/token/ERC721/ERC721.sol";
 
 contract ReferralProxy is MixinResolver, Owned, ERC721 {
-    // ========== ADDRESS RESOLVER CONFIGURATION ==========
+    uint256 public constant REFERRAL_EXPIRATION = 30 days;
+
+    bytes32 private constant sUSD = "sUSD";
     bytes32 private constant CONTRACT_SYNTHETIX = "Synthetix";
 
-    uint public issuedReferrals;
+    uint public issuedReferrals = 1; //hack so we dont assign id 0 which is used as "no referral"
 
-    mapping(address => bool) public existingUsers;
+    mapping(address => uint) public existingUsers;
     mapping(uint => address) public referralOrigin;
+    mapping(address => uint) public volume;
 
     // ========== CONSTRUCTOR ==========
 
@@ -43,7 +46,8 @@ contract ReferralProxy is MixinResolver, Owned, ERC721 {
     }
 
     function sendReferral(address _to, uint referralId) external {
-        require(!existingUsers[_to], "User exists");
+        require(existingUsers[_to] == 0, "User exists");
+        existingUsers[_to] = block.timestamp;
         //TODO: can the referral be re-transferable? What are the implications of sending it to myself?
         transferFrom(msg.sender, _to, referralId);
         emit ReferralSent(msg.sender, _to, referralId);
@@ -52,9 +56,26 @@ contract ReferralProxy is MixinResolver, Owned, ERC721 {
     function exchangeWithReferral(
         bytes32 sourceCurrencyKey,
         uint sourceAmount,
-        bytes32 destinationCurrencyKey
+        bytes32 destinationCurrencyKey,
+        uint referralId
     ) external {
-        synthetix().exchange(sourceCurrencyKey, sourceAmount, destinationCurrencyKey);
+        uint amountReceived = synthetix().exchange(sourceCurrencyKey, sourceAmount, destinationCurrencyKey);
+
+        uint userSince = existingUsers[msg.sender];
+        if (userSince > 0) {
+            if (referralId > 0) {
+                uint timeSinceReferral = block.timestamp.sub(userSince);
+                require(ownerOf(referralId) == msg.sender && timeSinceReferral < REFERRAL_EXPIRATION, "referral inactive");
+                // this is where you use an oracle to convert everything back to sUSD, assuming only usd trades for now
+                if (sourceCurrencyKey == sUSD) {
+                    volume[msg.sender] = volume[msg.sender].add(sourceAmount);
+                } else {
+                    volume[msg.sender] = volume[msg.sender].add(amountReceived);
+                }
+            }
+        } else {
+            existingUsers[msg.sender] = block.timestamp;
+        }
     }
 
     event ReferralsIssued(address _to, uint _amount);
