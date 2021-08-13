@@ -62,6 +62,11 @@ module.exports = async ({
 	});
 
 	await deployer.deployContract({
+		name: 'ReferralProxy',
+		args: [account, addressOf(readProxyForResolver)],
+	});
+
+	await deployer.deployContract({
 		name: 'RewardEscrow',
 		args: [account, ZERO_ADDRESS, ZERO_ADDRESS],
 	});
